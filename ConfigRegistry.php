@@ -34,18 +34,19 @@ abstract class ConfigRegistry
     ];
 
     /**
-     * @param string $key
-     * @param mixed  $value
+     * @param string $configFile
      *
      * @return void
      */
-    public static function set($key, $value)
+    public static function set($configFile = '')
     {
-        if (!in_array($key, self::$allowedKeys)) {
-            throw new \InvalidArgumentException('Invalid key given');
+        $confArray = parse_ini_file($configFile);
+        foreach ($confArray as $key=>$value) {
+            if (!in_array($key, self::$allowedKeys)) {
+                throw new \InvalidArgumentException('Invalid key given: ' . $key);
+            }
+            self::$storedValues[$key] = $value;
         }
-
-        self::$storedValues[$key] = $value;
     }
 
     /**
