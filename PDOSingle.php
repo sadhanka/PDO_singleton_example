@@ -29,7 +29,13 @@ final class PDOSingle
                 : self::$instance;
     }
 
-    public function query($sql) {
+    public function query($sql)
+    {
         return self::$dbConn->query($sql);
+    }
+
+    public function prepare($sql, array $driver_options = array())
+    {
+        return self::$dbConn->prepare($sql, $driver_options);
     }
 }
