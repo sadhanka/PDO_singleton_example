@@ -14,8 +14,9 @@ final class PDOSingle
 
     private function __construct()  // new Singleton
     {
-        self::$dbConn = new PDO('mysql:host=' . ConfigRegistry::get('db_host') . ';dbname=' . ConfigRegistry::get('db_name'), ConfigRegistry::get('db_user'), ConfigRegistry::get('db_pass'));
-        self::$dbConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        self::$dbConn = new PDO('mysql:host=' . ConfigRegistry::get('db_host') . ';dbname=' . ConfigRegistry::get('db_name'), ConfigRegistry::get('db_user'), ConfigRegistry::get('db_pass'), array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES => false));
+//        self::$dbConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        self::$dbConn->beginTransaction();
     }
 
     private function __clone() { /* ... @return Singleton */ }  // clone
@@ -34,8 +35,28 @@ final class PDOSingle
         return self::$dbConn->query($sql);
     }
 
-    public function prepare($sql, array $driver_options = array())
+    public function prepare($sql)
     {
-        return self::$dbConn->prepare($sql, $driver_options);
+        return self::$dbConn->prepare($sql);
+    }
+
+    public function exec($sql)
+    {
+        return self::$dbConn->exec($sql);
+    }
+
+    public function rollBack()
+    {
+        return self::$dbConn->rollBack();
+    }
+
+    public function commit()
+    {
+        return self::$dbConn->commit();
+    }
+
+    public function lastInsertId()
+    {
+        return self::$dbConn->lastInsertId();
     }
 }
