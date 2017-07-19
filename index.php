@@ -15,11 +15,66 @@ function my_autoload_register( $class_name ) {
     }
 }
 ConfigRegistry::set('config.ini');
-
-
 $db = PDOSingle::getInstance();
 
+if (isset($_GET['new_msg'])) {
+    /**
+     * do not forget:
+     * ALTER TABLE *mytable* ENGINE=InnoDB;
+     * ALTER TABLE *mytable* ADD UNIQUE(*id*)
+     * ALTER TABLE *mytable* AUTO_INCREMENT=100;
+     */
+    try {
+        // create new user
+        $rndNumber = random_int(0, 1000);
+        $userQuery = "INSERT INTO user (uname, upass, regdate, lastlogin) VALUES ('user_$rndNumber', 'e10adc3949ba59abbe56e057f20f883e', NOW(), NOW())";
+        $db->exec($userQuery);
 
+        // use prepared statements combined with Transactions
+        // Insert message with just added user ID
+        $newUserID = $db->lastInsertId();
+        $msgQuery = "INSERT INTO messages (mtext, uid, mdate, published) VALUES ('PDO transaction', ?, NOW(), 0)";
+        $stmtMsg = $db->prepare($msgQuery);
+        $stmtMsg->execute( array($newUserID) );
+
+        $db->commit();
+        $output = 'Transaction is OK';
+    }
+    catch (Exception $e) {
+        $db->rollBack();
+        $output = 'Error: ' . $e->getMessage();
+    }
+}
+
+//TODO: select uname from user table
+
+//select published or unpublished messages of one user
+$dbQuery = 'SELECT * FROM messages WHERE uid = ? and published=?';
+$stmt = $db->prepare($dbQuery);
+
+$uid = isset($_GET['uid']) ? $_GET['uid'] : 1;
+$publ = isset($_GET['publ']) ? $_GET['publ'] : 1;
+$stmt->execute([$uid, $publ]);
+
+$mesagesArray = [];
+$mesagesArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+//TODO: create MessageClass and add MessageClass obj here
+
+$output .= '<div class="row"><div class="col-sm-12"><a href="index.php?new_msg=1">Create new user and message</a></div></div>';
+$output .= '<div class="row"><div class="col-sm-4"><a href="index.php?uid=1">User ID: 1</a></div>';
+$output .= '<div class="col-sm-4"><a href="index.php?uid=2">User ID: 2</a></div>';
+$output .= '<div class="col-sm-4"><a href="index.php?uid=3">User ID: 3</a></div></div>';
+
+foreach ($mesagesArray as $row) {
+    $output .= '
+<div class="row">
+    <div class="col-sm-1">User ID: ' . $row['uid'] . '</div>
+    <div class="col-sm-2">' . $row['mdate'] . '</div>
+    <div class="col-sm-7">' . $row['mtext'] . '</div>
+    <div class="col-sm-2"><a href="index.php?uid=' . $row['uid'] . '&publ=' . ($publ ? '0' : '1') . '">' . ($publ ? 'Published' : 'Unpublished') . '</a></div>
+</div>';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
